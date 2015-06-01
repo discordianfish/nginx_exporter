@@ -6,12 +6,12 @@ consumption.
 To run it:
 
 ```bash
-go run nginx_exporter [flags]
+./nginx_exporter [flags]
 ```
 
 Help on flags:
 ```bash
-go run nginx_exporter --help
+./nginx_exporter --help
 ```
 
 # Getting Started
