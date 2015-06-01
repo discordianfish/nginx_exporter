@@ -19,7 +19,7 @@ const (
 )
 
 var (
-	listeningAddress = flag.String("telemetry.address", ":8080", "Address on which to expose metrics.")
+	listeningAddress = flag.String("telemetry.address", ":9113", "Address on which to expose metrics.")
 	metricsEndpoint  = flag.String("telemetry.endpoint", "/metrics", "Path under which to expose metrics.")
 	nginxScrapeURI   = flag.String("nginx.scrape_uri", "http://localhost/nginx_status", "URI to nginx stub status page")
 	insecure         = flag.Bool("insecure", true, "Ignore server certificate if using https")

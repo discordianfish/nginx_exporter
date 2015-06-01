@@ -1,14 +1,14 @@
-FROM       ubuntu
-MAINTAINER Johannes 'fish' Ziemke <github@freigeist.org> @discordianfish
+FROM alpine:3.2
+MAINTAINER The Prometheus Authors <prometheus-developers@googlegroups.com>
 
-RUN        apt-get update && apt-get install -yq curl git mercurial gcc
-RUN        curl -s https://go.googlecode.com/files/go1.2.linux-amd64.tar.gz | tar -C /usr/local -xzf -
-ENV        PATH    /usr/local/go/bin:$PATH
-ENV        GOPATH  /go
+ENV GOPATH /go
+COPY . /go/src/github.com/prometheus/nginx_exporter
 
-ADD        . /usr/src/nginx_exporter
-RUN        cd /usr/src/nginx_exporter && \
-           go get -d && go build && cp nginx_exporter /
+RUN apk add --update -t build-deps go git mercurial make \
+    && apk add -u musl && rm -rf /var/cache/apk/* \
+    && cd /go/src/github.com/prometheus/nginx_exporter \
+    && make && cp nginx_exporter /bin/nginx_exporter \
+    && rm -rf /go && apk del --purge build-deps
 
-ENTRYPOINT [ "/nginx_exporter" ]
-EXPOSE     8080
+EXPOSE     9113
+ENTRYPOINT [ "/bin/nginx_exporter" ]
