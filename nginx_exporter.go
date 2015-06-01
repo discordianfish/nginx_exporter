@@ -5,13 +5,13 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"strconv"
 	"strings"
 	"sync"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/log"
 )
 
 const (
@@ -43,12 +43,12 @@ func NewExporter(uri string) *Exporter {
 		URI: uri,
 		scrapeFailures: prometheus.NewCounter(prometheus.CounterOpts{
 			Namespace: namespace,
-			Name:      "exporter_scrape_failures",
+			Name:      "exporter_scrape_failures_total",
 			Help:      "Number of errors while scraping nginx.",
 		}),
 		processedConnections: prometheus.NewCounterVec(prometheus.CounterOpts{
 			Namespace: namespace,
-			Name:      "connections_processed",
+			Name:      "connections_processed_total",
 			Help:      "Number of connections processed by nginx",
 		},
 			[]string{"stage"},
