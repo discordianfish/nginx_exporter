@@ -14,5 +14,14 @@ Help on flags:
 ./nginx_exporter --help
 ```
 
-# Getting Started
+## Getting Started
   * All of the core developers are accessible via the [Prometheus Developers Mailinglist](https://groups.google.com/forum/?fromgroups#!forum/prometheus-developers).
+
+## Using Docker
+
+```
+docker pull fish/nginx-exporter
+
+docker run -d -p 9113:9113 fish/nginx-exporter \
+    -nginx.scrape_uri=http://172.17.42.1/nginx_status
+```
