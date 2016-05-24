@@ -176,5 +176,15 @@ func main() {
 
 	log.Printf("Starting Server: %s", *listeningAddress)
 	http.Handle(*metricsEndpoint, prometheus.Handler())
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte(`<html>
+			<head><title>Nginx Exporter</title></head>
+			<body>
+			<h1>Nginx Exporter</h1>
+			<p><a href="` + *metricsEndpoint + `">Metrics</a></p>
+			</body>
+			</html>`))
+	})
+
 	log.Fatal(http.ListenAndServe(*listeningAddress, nil))
 }
