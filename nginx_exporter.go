@@ -33,7 +33,7 @@ type Exporter struct {
 	client *http.Client
 
 	scrapeFailures       prometheus.Counter
-	processedConnections *prometheus.CounterVec
+	processedConnections *prometheus.Desc
 	currentConnections   *prometheus.GaugeVec
 }
 
@@ -46,12 +46,11 @@ func NewExporter(uri string) *Exporter {
 			Name:      "exporter_scrape_failures_total",
 			Help:      "Number of errors while scraping nginx.",
 		}),
-		processedConnections: prometheus.NewCounterVec(prometheus.CounterOpts{
-			Namespace: namespace,
-			Name:      "connections_processed_total",
-			Help:      "Number of connections processed by nginx",
-		},
-			[]string{"stage"},
+		processedConnections: prometheus.NewDesc(
+                        prometheus.BuildFQName(namespace, "", "connections_processed_total"),
+			"Number of connections processed by nginx",
+                        []string{"accepted", "handled", "any"},
+                        nil,
 		),
 		currentConnections: prometheus.NewGaugeVec(prometheus.GaugeOpts{
 			Namespace: namespace,
@@ -71,7 +70,7 @@ func NewExporter(uri string) *Exporter {
 // Describe describes all the metrics ever exported by the nginx exporter. It
 // implements prometheus.Collector.
 func (e *Exporter) Describe(ch chan<- *prometheus.Desc) {
-	e.processedConnections.Describe(ch)
+	ch <- e.processedConnections
 	e.currentConnections.Describe(ch)
 	e.scrapeFailures.Describe(ch)
 }
@@ -117,17 +116,17 @@ func (e *Exporter) collect(ch chan<- prometheus.Metric) error {
 	if err != nil {
 		return err
 	}
-	e.processedConnections.WithLabelValues("accepted").Set(float64(v))
+        ch <- prometheus.MustNewConstMetric(e.processedConnections, prometheus.CounterValue, float64(v), "accepted")
 	v, err = strconv.Atoi(strings.TrimSpace(parts[1]))
 	if err != nil {
 		return err
 	}
-	e.processedConnections.WithLabelValues("handled").Set(float64(v))
+        ch <- prometheus.MustNewConstMetric(e.processedConnections, prometheus.CounterValue, float64(v), "handled")
 	v, err = strconv.Atoi(strings.TrimSpace(parts[2]))
 	if err != nil {
 		return err
 	}
-	e.processedConnections.WithLabelValues("any").Set(float64(v))
+        ch <- prometheus.MustNewConstMetric(e.processedConnections, prometheus.CounterValue, float64(v), "any")
 
 	// current connections
 	parts = strings.Fields(lines[3])
@@ -163,8 +162,6 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 		e.scrapeFailures.Inc()
 		e.scrapeFailures.Collect(ch)
 	}
-	e.processedConnections.Collect(ch)
-	e.currentConnections.Collect(ch)
 	return
 }
 
