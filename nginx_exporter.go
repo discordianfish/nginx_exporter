@@ -47,10 +47,10 @@ func NewExporter(uri string) *Exporter {
 			Help:      "Number of errors while scraping nginx.",
 		}),
 		processedConnections: prometheus.NewDesc(
-                        prometheus.BuildFQName(namespace, "", "connections_processed_total"),
+			prometheus.BuildFQName(namespace, "", "connections_processed_total"),
 			"Number of connections processed by nginx",
-                        []string{"accepted", "handled", "any"},
-                        nil,
+			[]string{"stage"},
+			nil,
 		),
 		currentConnections: prometheus.NewGaugeVec(prometheus.GaugeOpts{
 			Namespace: namespace,
@@ -116,17 +116,17 @@ func (e *Exporter) collect(ch chan<- prometheus.Metric) error {
 	if err != nil {
 		return err
 	}
-        ch <- prometheus.MustNewConstMetric(e.processedConnections, prometheus.CounterValue, float64(v), "accepted")
+	ch <- prometheus.MustNewConstMetric(e.processedConnections, prometheus.CounterValue, float64(v), "accepted")
 	v, err = strconv.Atoi(strings.TrimSpace(parts[1]))
 	if err != nil {
 		return err
 	}
-        ch <- prometheus.MustNewConstMetric(e.processedConnections, prometheus.CounterValue, float64(v), "handled")
+	ch <- prometheus.MustNewConstMetric(e.processedConnections, prometheus.CounterValue, float64(v), "handled")
 	v, err = strconv.Atoi(strings.TrimSpace(parts[2]))
 	if err != nil {
 		return err
 	}
-        ch <- prometheus.MustNewConstMetric(e.processedConnections, prometheus.CounterValue, float64(v), "any")
+	ch <- prometheus.MustNewConstMetric(e.processedConnections, prometheus.CounterValue, float64(v), "any")
 
 	// current connections
 	parts = strings.Fields(lines[3])
