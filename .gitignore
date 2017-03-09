@@ -1,1 +1,4 @@
+.build
+dependencies-stamp
 nginx_exporter
+nginx_exporter-*.tar.gz

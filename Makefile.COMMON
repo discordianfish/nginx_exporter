@@ -48,7 +48,7 @@ ifeq ($(GOOS),darwin)
 	RELEASE_SUFFIX ?= -osx$(shell sw_vers -productVersion)
 endif
 
-GO_VERSION ?= 1.4.2
+GO_VERSION ?= 1.7.5
 GOURL      ?= https://golang.org/dl
 GOPKG      ?= go$(GO_VERSION).$(GOOS)-$(GOARCH)$(RELEASE_SUFFIX).tar.gz
 GOPATH     := $(CURDIR)/.build/gopath
@@ -96,6 +96,10 @@ dependencies-stamp: $(GOCC) $(SRC) | $(SELFLINK)
 
 $(BINARY): $(GOCC) $(SRC) dependencies-stamp Makefile Makefile.COMMON
 	$(GO) build $(GOFLAGS) -o $@
+
+.PHONY: build-with-docker
+build-with-docker:
+	docker run --rm -v "$(PWD)":/go/src/github.com/discordianfish/nginx_exporter -w /go/src/github.com/discordianfish/nginx_exporter golang:$(GO_VERSION) bash -c 'make clean && make && make archive'
 
 .PHONY: archive
 archive: $(ARCHIVE)
