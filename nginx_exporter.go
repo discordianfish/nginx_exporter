@@ -35,6 +35,7 @@ type Exporter struct {
 	scrapeFailures       prometheus.Counter
 	processedConnections *prometheus.Desc
 	currentConnections   *prometheus.GaugeVec
+	nginxUp              prometheus.Gauge
 }
 
 // NewExporter returns an initialized Exporter.
@@ -59,6 +60,11 @@ func NewExporter(uri string) *Exporter {
 		},
 			[]string{"state"},
 		),
+		nginxUp: prometheus.NewGauge(prometheus.GaugeOpts{
+			Namespace: namespace,
+			Name:      "up",
+			Help:      "Whether the nginx is up.",
+		}),
 		client: &http.Client{
 			Transport: &http.Transport{
 				TLSClientConfig: &tls.Config{InsecureSkipVerify: *insecure},
@@ -72,14 +78,17 @@ func NewExporter(uri string) *Exporter {
 func (e *Exporter) Describe(ch chan<- *prometheus.Desc) {
 	ch <- e.processedConnections
 	e.currentConnections.Describe(ch)
+	e.nginxUp.Describe(ch)
 	e.scrapeFailures.Describe(ch)
 }
 
 func (e *Exporter) collect(ch chan<- prometheus.Metric) error {
 	resp, err := e.client.Get(e.URI)
 	if err != nil {
+		e.nginxUp.Set(0)
 		return fmt.Errorf("Error scraping nginx: %v", err)
 	}
+	e.nginxUp.Set(1)
 
 	data, err := ioutil.ReadAll(resp.Body)
 	resp.Body.Close()
@@ -163,6 +172,7 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 		e.scrapeFailures.Collect(ch)
 	}
 	e.currentConnections.Collect(ch)
+	e.nginxUp.Collect(ch)
 	return
 }
 
