@@ -15,17 +15,13 @@ import (
 	"github.com/prometheus/log"
 )
 
-const (
-	namespace = "nginx" // For Prometheus metrics.
-)
-
 var (
 	listeningAddress = flag.String("telemetry.address", ":9113", "Address on which to expose metrics.")
 	metricsEndpoint  = flag.String("telemetry.endpoint", "/metrics", "Path under which to expose metrics.")
 	nginxScrapeURI   = flag.String("nginx.scrape_uri", "http://localhost/nginx_status", "URI to nginx stub status page")
 	insecure         = flag.Bool("insecure", true, "Ignore server certificate if using https")
 	nginxmetriconly  = flag.Bool("nginxmetriconly", true, "Collect only nginx metrics only excluding own metrics")
-	environment      = flag.String("environment", "production", "Environment where nginx is running")
+	namespace        = flag.String("namespace", "nginx", "Namespace for metrics")
 )
 
 // Exporter collects nginx stats from the given URI and exports them using
@@ -38,7 +34,7 @@ type Exporter struct {
 	scrapeFailures       prometheus.Counter
 	processedConnections *prometheus.Desc
 	currentConnections   *prometheus.GaugeVec
-	nginxUp              *prometheus.GaugeVec
+	nginxUp              prometheus.Gauge
 }
 
 // NewExporter returns an initialized Exporter.
@@ -46,29 +42,28 @@ func NewExporter(uri string) *Exporter {
 	return &Exporter{
 		URI: uri,
 		scrapeFailures: prometheus.NewCounter(prometheus.CounterOpts{
-			Namespace: namespace,
+			Namespace: *namespace,
 			Name:      "exporter_scrape_failures_total",
 			Help:      "Number of errors while scraping nginx.",
 		}),
 		processedConnections: prometheus.NewDesc(
-			prometheus.BuildFQName(namespace, "", "connections_processed_total"),
+			prometheus.BuildFQName(*namespace, "", "connections_processed_total"),
 			"Number of connections processed by nginx",
-			[]string{"environment", "stage"},
+			[]string{"stage"},
 			nil,
 		),
 		currentConnections: prometheus.NewGaugeVec(prometheus.GaugeOpts{
-			Namespace: namespace,
+			Namespace: *namespace,
 			Name:      "connections_current",
 			Help:      "Number of connections currently processed by nginx",
 		},
-			[]string{"environment", "state"},
+			[]string{"state"},
 		),
-		nginxUp: prometheus.NewGaugeVec(prometheus.GaugeOpts{
-			Namespace: namespace,
+		nginxUp: prometheus.NewGauge(prometheus.GaugeOpts{
+			Namespace: *namespace,
 			Name:      "up",
 			Help:      "Whether the nginx is up.",
 		},
-			[]string{"environment"},
 		),
 		client: &http.Client{
 			Transport: &http.Transport{
@@ -90,10 +85,10 @@ func (e *Exporter) Describe(ch chan<- *prometheus.Desc) {
 func (e *Exporter) collect(ch chan<- prometheus.Metric) error {
 	resp, err := e.client.Get(e.URI)
 	if err != nil {
-		e.nginxUp.WithLabelValues(*environment).Set(float64(0))
+		e.nginxUp.Set(float64(0))
 		return fmt.Errorf("Error scraping nginx: %v", err)
 	}
-	e.nginxUp.WithLabelValues(*environment).Set(float64(1))
+	e.nginxUp.Set(float64(1))
 
 	data, err := ioutil.ReadAll(resp.Body)
 	resp.Body.Close()
@@ -119,7 +114,7 @@ func (e *Exporter) collect(ch chan<- prometheus.Metric) error {
 	if err != nil {
 		return err
 	}
-	e.currentConnections.WithLabelValues(*environment, "active").Set(float64(v))
+	e.currentConnections.WithLabelValues("active").Set(float64(v))
 
 	// processed connections
 	parts = strings.Fields(lines[2])
@@ -130,20 +125,17 @@ func (e *Exporter) collect(ch chan<- prometheus.Metric) error {
 	if err != nil {
 		return err
 	}
-	ch <- prometheus.MustNewConstMetric(e.processedConnections, prometheus.CounterValue, float64(v),
-		*environment, "accepted")
+	ch <- prometheus.MustNewConstMetric(e.processedConnections, prometheus.CounterValue, float64(v), "accepted")
 	v, err = strconv.Atoi(strings.TrimSpace(parts[1]))
 	if err != nil {
 		return err
 	}
-	ch <- prometheus.MustNewConstMetric(e.processedConnections, prometheus.CounterValue, float64(v),
-		*environment, "handled")
+	ch <- prometheus.MustNewConstMetric(e.processedConnections, prometheus.CounterValue, float64(v), "handled")
 	v, err = strconv.Atoi(strings.TrimSpace(parts[2]))
 	if err != nil {
 		return err
 	}
-	ch <- prometheus.MustNewConstMetric(e.processedConnections, prometheus.CounterValue, float64(v),
-		*environment, "any")
+	ch <- prometheus.MustNewConstMetric(e.processedConnections, prometheus.CounterValue, float64(v), "any")
 
 	// current connections
 	parts = strings.Fields(lines[3])
@@ -154,18 +146,18 @@ func (e *Exporter) collect(ch chan<- prometheus.Metric) error {
 	if err != nil {
 		return err
 	}
-	e.currentConnections.WithLabelValues(*environment, "reading").Set(float64(v))
+	e.currentConnections.WithLabelValues("reading").Set(float64(v))
 	v, err = strconv.Atoi(strings.TrimSpace(parts[3]))
 	if err != nil {
 		return err
 	}
 
-	e.currentConnections.WithLabelValues(*environment, "writing").Set(float64(v))
+	e.currentConnections.WithLabelValues("writing").Set(float64(v))
 	v, err = strconv.Atoi(strings.TrimSpace(parts[5]))
 	if err != nil {
 		return err
 	}
-	e.currentConnections.WithLabelValues(*environment, "waiting").Set(float64(v))
+	e.currentConnections.WithLabelValues("waiting").Set(float64(v))
 	return nil
 }
 
@@ -186,9 +178,9 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 
 func main() {
 	flag.Parse()
-	*environment = strings.TrimSpace(*environment)
-	if *environment == "" {
-		log.Fatal("Invalid value for environment")
+	*namespace = strings.TrimSpace(*namespace)
+	if *namespace == "" {
+		log.Fatal("Invalid value for namespace")
 	}
 	exporter := NewExporter(*nginxScrapeURI)
 	if !*nginxmetriconly {
