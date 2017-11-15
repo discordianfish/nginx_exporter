@@ -8,7 +8,7 @@ RUN	wget -q https://github.com/golang/dep/releases/download/${DEP_VERSION}/dep-l
 WORKDIR	/go/src/github.com/discordianfish/nginx_exporter
 COPY	. .
 RUN	dep ensure --vendor-only \
-&&	go build
+&&	CGO_ENABLED=0 go build --ldflags '-extldflags "-static"'
 
 FROM	quay.io/prometheus/busybox:glibc
 EXPOSE	9113
