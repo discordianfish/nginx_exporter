@@ -1,5 +1,6 @@
 FROM golang:1.9
 WORKDIR /go/src/github.com/discordianfish/nginx_exporter
+ENV GOOS=linux CGO_ENABLED=0
 COPY . .
 RUN  go get -d && go build
 
