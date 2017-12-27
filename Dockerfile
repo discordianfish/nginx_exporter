@@ -3,7 +3,7 @@ LABEL maintainer="@discordianfish"
 WORKDIR /go/src/github.com/discordianfish/nginx_exporter
 ENV GOOS=linux CGO_ENABLED=0
 COPY . .
-RUN  go get -d && go build
+RUN  go get -d && CGO_ENABLED=0 go build --ldflags '-extldflags "-static"'
 
 
 FROM quay.io/prometheus/busybox:glibc
