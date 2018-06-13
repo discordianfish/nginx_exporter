@@ -37,6 +37,9 @@ func TestNginxStatus(t *testing.T) {
 			t.Error("expected metric but got nil")
 		}
 	}
+
+	close(ch)
+
 	if <-ch != nil {
 		t.Error("expected closed channel")
 	}
