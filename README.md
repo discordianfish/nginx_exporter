@@ -1,6 +1,6 @@
 # Nginx Exporter for Prometheus
 
-This is a simple server that periodically scrapes nginx stats and exports them via HTTP for Prometheus
+This Prometheus Exporter retrieves nginx stats and exports them via HTTP for Prometheus
 consumption.
 
 To run it:
