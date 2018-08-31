@@ -14,7 +14,7 @@ server accepts handled requests
  145249 145249 151557 
 Reading: 0 Writing: 24 Waiting: 66 
 `
-	metricCount = 7
+	metricCount = 8
 )
 
 func TestNginxStatus(t *testing.T) {
