@@ -11,6 +11,7 @@ import (
 	"sync"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/prometheus/common/log"
 )
 
@@ -183,7 +184,7 @@ func main() {
 	prometheus.MustRegister(exporter)
 
 	log.Infof("Starting Server: %s", *listeningAddress)
-	http.Handle(*metricsEndpoint, prometheus.Handler())
+	http.Handle(*metricsEndpoint, promhttp.Handler())
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(`<html>
 			<head><title>Nginx Exporter</title></head>
