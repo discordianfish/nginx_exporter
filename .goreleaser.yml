@@ -1,0 +1,22 @@
+# .goreleaser.yml
+# Build customization
+builds:
+  - main: nginx_exporter.go
+    binary: nginx_exporter
+    goos:
+      - windows
+      - darwin
+      - linux
+    goarch:
+      - amd64
+      - arm
+      - arm64
+      - 386
+      
+# Archive customization
+archive:
+  format: tar.gz
+  files:
+    - LICENSE
+sign:
+  artifacts: all
